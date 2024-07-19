@@ -1,0 +1,71 @@
+import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+# Load the dataset
+url = 'https://web.stanford.edu/class/archive/cs/cs109/cs109.1166/stuff/titanic.csv'
+data = pd.read_csv(url)
+
+# Display the first few rows and column names of the dataset
+print(data.head())
+print(data.columns)
+
+# Data preprocessing
+# Fill missing values
+if 'Age' in data.columns:
+    data['Age'].fillna(data['Age'].median(), inplace=True)
+if 'Embarked' in data.columns:
+    data['Embarked'].fillna(data['Embarked'].mode()[0], inplace=True)
+
+# Convert categorical variables to numeric
+label_encoder = LabelEncoder()
+if 'Sex' in data.columns:
+    data['Sex'] = label_encoder.fit_transform(data['Sex'])
+if 'Embarked' in data.columns:
+    data['Embarked'] = label_encoder.fit_transform(data['Embarked'])
+
+# Select relevant features
+features = ['Pclass', 'Sex', 'Age', 'SibSp', 'Parch', 'Fare']
+if 'Embarked' in data.columns:
+    features.append('Embarked')
+
+# Ensure all selected features exist in the data
+features = [feature for feature in features if feature in data.columns]
+
+X = data[features]
+y = data['Survived']
+
+# Split the data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Feature scaling
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+# Train the model
+model = RandomForestClassifier(n_estimators=100, random_state=42)
+model.fit(X_train, y_train)
+
+# Make predictions
+y_pred = model.predict(X_test)
+
+# Evaluate the model
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy:.2f}')
+print('Classification Report:')
+print(classification_report(y_test, y_pred))
+print('Confusion Matrix:')
+print(confusion_matrix(y_test, y_pred))
+
+# Feature importance
+importances = model.feature_importances_
+feature_importance = pd.Series(importances, index=features).sort_values(ascending=False)
+print('Feature Importance:')
+print(feature_importance)
+
+
+
